@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Continuous ICU Intelligence   Project Synopsis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1b1e;
+    --paper:#faf9f7;
+    --teal:#0e6e6e;
+    --teal-deep:#0a4d4d;
+    --pink:#f2b5bd;
+    --pink-deep:#d97b88;
+    --blue:#7fb6d5;
+    --muted:#5b6b6d;
+    --line:#e3e0da;
+    --card:#ffffff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    color:var(--ink);
+    overflow:hidden;
+  }
+
+  /* ---------- Deck chrome ---------- */
+  #deck{width:100vw;height:100vh;position:relative}
+  .progress{position:fixed;top:0;left:0;height:4px;background:var(--teal);z-index:60;transition:width .45s cubic-bezier(.22,1,.36,1);box-shadow:0 0 12px rgba(14,110,110,.5)}
+  .counter{
+    position:fixed;bottom:22px;right:28px;z-index:60;
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;
+    color:#8fa6a8;display:flex;align-items:center;gap:10px;
+  }
+  .counter .bar{width:60px;height:2px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden}
+  .counter .bar i{display:block;height:100%;background:var(--pink);transition:width .45s}
+  .hint{
+    position:fixed;bottom:22px;left:28px;z-index:60;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;color:#5f7477;
+  }
+  .hint kbd{border:1px solid #2c3f42;border-radius:4px;padding:1px 6px;color:#9fb6b8;font-family:inherit}
+
+  /* ---------- Slides ---------- */
+  .slide{
+    position:absolute;inset:0;
+    background:var(--paper);
+    display:flex;flex-direction:column;
+    padding:6vh 8vw 8vh;
+    opacity:0;visibility:hidden;transform:translateY(24px) scale(.985);
+    transition:opacity .5s ease,transform .5s cubic-bezier(.22,1,.36,1),visibility .5s;
+    overflow:auto;
+  }
+  .slide.active{opacity:1;visibility:visible;transform:none}
+  .slide.prev{transform:translateY(-24px) scale(.985)}
+
+  .kicker{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--teal);
+    display:flex;align-items:center;gap:12px;margin-bottom:2.2vh;
+  }
+  .kicker::before{content:"";width:34px;height:2px;background:var(--teal)}
+  h2.title{
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:clamp(30px,4.4vw,58px);line-height:1.06;letter-spacing:-.01em;
+    margin-bottom:3.2vh;color:var(--ink);
+  }
+  h2.title em{font-style:italic;color:var(--teal)}
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center}
+  p.lede{font-size:clamp(15px,1.25vw,19px);color:var(--muted);max-width:70ch;margin-bottom:2.4vh;line-height:1.6}
+  .footnote{
+    margin-top:2.5vh;font-size:12.5px;color:var(--muted);
+    border-top:1px solid var(--line);padding-top:12px;
+    font-family:'JetBrains Mono',monospace;letter-spacing:.06em;
+    display:flex;justify-content:space-between;
+  }
+
+  /* Grids & cards */
+  .cols{display:grid;gap:2.2vw}
+  .cols.two{grid-template-columns:1fr 1fr}
+  .cols.three{grid-template-columns:repeat(3,1fr)}
+  .divider-col{border-left:1px solid var(--line);padding-left:2.2vw}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;box-shadow:0 10px 30px -18px rgba(13,27,30,.25);
+    transition:transform .3s ease,box-shadow .3s ease;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 18px 36px -18px rgba(13,27,30,.3)}
+  .card h4{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  .card h4 .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);flex:none}
+  .card p{font-size:13.5px;color:var(--muted);line-height:1.55}
+  .card.pink h4 .dot{background:var(--pink-deep)}
+  .card.blue h4 .dot{background:var(--blue)}
+
+  .pill{
+    display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;
+    letter-spacing:.1em;padding:3px 10px;border-radius:99px;
+    background:#eaf4f4;color:var(--teal-deep);margin-right:6px;margin-bottom:6px;
+  }
+  .pill.pink{background:#fdeef0;color:#a8555f}
+  .pill.gray{background:#f1efec;color:var(--muted)}
+
+  ul.clean{list-style:none}
+  ul.clean li{
+    position:relative;padding-left:26px;margin-bottom:14px;
+    font-size:clamp(13.5px,1.05vw,16px);line-height:1.55;color:#33464a;
+  }
+  ul.clean li::before{
+    content:"";position:absolute;left:0;top:9px;width:14px;height:2px;background:var(--pink-deep);
+  }
+  ul.clean li strong{color:var(--ink)}
+  ol.num{list-style:none;counter-reset:n}
+  ol.num li{
+    counter-increment:n;position:relative;padding-left:52px;margin-bottom:16px;
+    font-size:clamp(13.5px,1.05vw,16px);line-height:1.55;color:#33464a;
+  }
+  ol.num li::before{
+    content:"0" counter(n);position:absolute;left:0;top:-2px;
+    font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--teal);
+    border:1px solid var(--teal);border-radius:8px;padding:2px 7px;
+  }
+
+  /* Big stat */
+  .stat-xl{
+    font-family:'Fraunces',serif;font-weight:300;
+    font-size:clamp(56px,7vw,110px);line-height:.95;color:var(--pink-deep);letter-spacing:-.02em;
+  }
+  .stat-xl b{font-weight:600}
+
+  /* Tables */
+  table.cmp{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 10px 30px -18px rgba(13,27,30,.2)}
+  table.cmp th{
+    text-align:left;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--teal-deep);background:#eef6f6;padding:13px 16px;border-bottom:1px solid var(--line);
+  }
+  table.cmp td{padding:12px 16px;font-size:13.5px;color:#33464a;border-bottom:1px solid var(--line);vertical-align:top}
+  table.cmp tr:last-child td{border-bottom:none}
+  table.cmp td:first-child{font-weight:600;color:var(--ink);white-space:nowrap}
+  table.cmp .bad{color:#b05863}
+  table.cmp .gantt-cell{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap}
+
+  /* Pipeline */
+  .pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin:2vh 0}
+  .step{
+    flex:1 1 150px;min-width:140px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:14px 16px;position:relative;
+  }
+  .step .n{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--pink-deep);letter-spacing:.15em}
+  .step .t{font-weight:700;font-size:14px;margin:4px 0 3px}
+  .step .s{font-size:12px;color:var(--muted);line-height:1.45}
+  .step::after{
+    content:"→";position:absolute;right:-13px;top:50%;transform:translateY(-50%);
+    color:var(--teal);font-weight:700;z-index:2;background:var(--paper);padding:0 2px;
+  }
+  .step:last-child::after{display:none}
+
+  /* Gantt bars */
+  .gantt{width:100%;border-collapse:separate;border-spacing:0 8px}
+  .gantt td{padding:0}
+  .gantt .lbl{width:220px;font-size:13px;font-weight:600;padding-right:14px}
+  .gantt .track{position:relative;height:22px;background:#f1efec;border-radius:99px}
+  .gantt .fill{position:absolute;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--teal),#2f9494)}
+  .gantt .fill.p{background:linear-gradient(90deg,var(--pink-deep),#eaa2ab)}
+  .gantt .fill.b{background:linear-gradient(90deg,#5c9ec2,var(--blue))}
+  .gantt .wk{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);width:90px;padding-left:12px}
+
+  /* Title slide */
+  .slide.title{
+    background:radial-gradient(1200px 700px at 80% -10%, #123a3a 0%, var(--ink) 55%);
+    color:#eef4f4;justify-content:center;
+  }
+  .slide.title .kicker{color:var(--pink)}
+  .slide.title .kicker::before{background:var(--pink)}
+  .slide.title h1{
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:clamp(34px,4.6vw,64px);line-height:1.08;letter-spacing:-.015em;max-width:20ch;
+  }
+  .slide.title h1 em{font-style:italic;color:var(--pink)}
+  .slide.title .sub{margin-top:2.4vh;font-size:clamp(14px,1.2vw,18px);color:#a9c3c4;max-width:60ch;line-height:1.6}
+  .team{margin-top:5vh;display:flex;flex-wrap:wrap;gap:10px}
+  .team span{
+    border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:8px 18px;
+    font-size:13px;color:#cfe0e0;letter-spacing:.03em;background:rgba(255,255,255,.04);
+  }
+  .meta-row{margin-top:3.4vh;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;color:#6e8a8d;display:flex;gap:34px;flex-wrap:wrap}
+  .meta-row b{color:#b7cccd;font-weight:600}
+  .title-orn{position:absolute;right:6vw;top:50%;transform:translateY(-50%);width:30vw;max-width:420px;opacity:.9}
+
+  svg text{font-family:'Inter',sans-serif}
+  svg .mono{font-family:'JetBrains Mono',monospace}
+
+  .callout{
+    background:#eaf4f4;border-left:3px solid var(--teal);border-radius:0 12px 12px 0;
+    padding:14px 18px;font-size:14px;color:#20484a;line-height:1.55;margin-top:1.5vh;
+  }
+  .callout.pink{background:#fdeef0;border-color:var(--pink-deep);color:#6d3a40}
+
+  @media (max-width:900px){
+    .cols.two,.cols.three{grid-template-columns:1fr}
+    .divider-col{border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:20px}
+    .title-orn{display:none}
+    .gantt .lbl{width:120px}
+    .slide{padding:5vh 6vw 10vh}
+  }
+  @media print{
+    body{overflow:visible;background:#fff}
+    .slide{position:static;opacity:1;visibility:visible;transform:none;page-break-after:always;height:auto;min-height:96vh}
+    .progress,.counter,.hint{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+<div id="deck">
+
+<!-- 1 · TITLE -->
+<section class="slide title active">
+  <div class="kicker">Project Synopsis · 2026–27</div>
+  <h1>Interpretable Dynamic Mortality Risk Prediction for <em>Mechanically Ventilated</em> ICU Patients</h1>
+  <p class="sub">A dynamic clinical companion for real-time decision support   continuous risk intelligence from time-series ICU data, with explainable alerts that surface the drivers behind every escalation.</p>
+  <svg class="title-orn" viewBox="0 0 400 300" fill="none">
+    <path d="M10 240 C60 238 80 230 110 220 C150 205 170 190 210 170 C250 148 280 120 320 90 C340 75 360 60 388 48" stroke="#2f6d6d" stroke-width="2"/>
+    <path d="M10 240 C60 238 80 230 110 220 C150 205 170 190 210 170 C250 148 280 120 320 90 C340 75 360 60 388 48" stroke="#f2b5bd" stroke-width="2" stroke-dasharray="6 8" opacity=".7"/>
+    <circle cx="388" cy="48" r="9" fill="#f2b5bd"/>
+    <circle cx="388" cy="48" r="18" stroke="#f2b5bd" opacity=".35"/>
+    <line x1="10" y1="240" x2="390" y2="240" stroke="#2c4a4c" stroke-width="1"/>
+    <text x="10" y="265" fill="#5f8386" font-size="11" class="mono">02:00</text>
+    <text x="360" y="265" fill="#5f8386" font-size="11" class="mono">06:00</text>
+    <text x="322" y="30" fill="#f2b5bd" font-size="12" class="mono">RISK ↑</text>
+  </svg>
+  <div class="team">
+    <span>Karan Patil</span><span>Krishna Hasare</span><span>Sumaira Shaikh</span><span>Sarthak Kumbhar</span>
+  </div>
+  <div class="meta-row">
+    <div>GUIDE &nbsp;<b>Prof. Archana S. Sawant</b></div>
+    <div>DEPT &nbsp;<b>Computer Science &amp; Engineering</b></div>
+    <div>INST &nbsp;<b>D.Y. Patil SOEM, Kolhapur</b></div>
+  </div>
+</section>
+
+<!-- 2 · PROBLEM -->
+<section class="slide">
+  <div class="kicker">01   Problem &amp; Context</div>
+  <h2 class="title">The illusion of the <em>snapshot</em></h2>
+  <div class="body">
+    <div class="cols two">
+      <div>
+        <p class="lede">Mechanically ventilated ICU patients carry the highest mortality risk in the hospital   yet current tools assess them with cross-sectional snapshots, not continuous trajectories.</p>
+        <ul class="clean">
+          <li><strong>Static scoring systems</strong>   APACHE II, SOFA and SAPS emit a single admission score; they never reflect how the patient is changing.</li>
+          <li><strong>Irregular sampling</strong>   vitals every 15–60 min, ventilator settings vary, labs every 6–24 h, medications event-based.</li>
+          <li><strong>Outdated values</strong>   last-observation-carried-forward keeps hour-old labs “alive” with no discount on reliability.</li>
+          <li><strong>Siloed monitoring</strong>   hemodynamics, ventilation, labs and medications reviewed separately; subtle multi-variable drift is missed.</li>
+        </ul>
+        <div class="callout pink"><strong>Result:</strong> delayed recognition of deterioration and missed windows for early intervention.</div>
+      </div>
+      <div class="divider-col">
+        <svg viewBox="0 0 520 300" style="width:100%">
+          <text x="20" y="24" font-size="14" font-weight="700">Cross-sectional blindness</text>
+          <rect x="20" y="44" width="220" height="44" rx="8" fill="#fff" stroke="#e3e0da"/>
+          <text x="130" y="71" font-size="13" text-anchor="middle" fill="#5b6b6d">APACHE II · SOFA · SAPS III</text>
+          <line x1="130" y1="88" x2="130" y2="150" stroke="#d0cdc7"/>
+          <line x1="20" y1="150" x2="300" y2="150" stroke="#c8c5bf"/>
+          <circle cx="130" cy="150" r="9" fill="#f2b5bd"/>
+          <text x="130" y="178" font-size="12" text-anchor="middle" class="mono" fill="#5b6b6d">6:00 AM   snapshot</text>
+          <text x="20" y="240" font-size="14" font-weight="700">The invisible drift</text>
+          <path d="M320 210 C350 208 365 200 385 192 C405 184 420 168 440 150 C455 137 470 122 495 108" stroke="#7fb6d5" stroke-width="2" fill="none"/>
+          <line x1="320" y1="210" x2="510" y2="210" stroke="#c8c5bf"/>
+          <circle cx="495" cy="108" r="8" fill="#f2b5bd"/>
+          <circle cx="495" cy="210" r="8" fill="#f2b5bd"/>
+          <line x1="495" y1="108" x2="495" y2="210" stroke="#f2b5bd" stroke-dasharray="4 5"/>
+          <text x="320" y="236" font-size="12" class="mono" fill="#5b6b6d">2:00 AM</text>
+          <text x="470" y="236" font-size="12" class="mono" fill="#5b6b6d">6:00 AM</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <div class="footnote"><span>CONTINUOUS ICU INTELLIGENCE</span><span>02 / 10</span></div>
+</section>
+
+<!-- 3 · WHY IT MATTERS -->
+<section class="slide">
+  <div class="kicker">02   Why It Matters</div>
+  <h2 class="title">The clinical cost of <em>invisible data</em></h2>
+  <div class="body">
+    <div class="cols three">
+      <div class="card pink">
+        <div class="stat-xl">30–<b>60%</b>+</div>
+        <h4 style="margin-top:14px"><span class="dot"></span>High stakes</h4>
+        <p>In-hospital mortality in mechanically ventilated patients ranges from 30% to over 60% depending on the underlying etiology.</p>
+      </div>
+      <div class="card">
+        <svg viewBox="0 0 120 130" style="width:96px;margin-bottom:6px">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#0d1b1e" stroke-width="2"/>
+          <path d="M60 60 L60 12 A48 48 0 0 1 102 84 Z" fill="#f2b5bd" opacity=".8"/>
+          <path d="M60 60 L96 36 A48 48 0 0 1 102 84 Z" fill="#d97b88" opacity=".5"/>
+          <circle cx="59" cy="59" r="3.5" fill="#0d1b1e"/>
+          <text x="55" y="125" font-size="10" text-anchor="middle" class="mono" fill="#5b6b6d">2 AM – 6 AM</text>
+        </svg>
+        <h4><span class="dot"></span>Human limits</h4>
+        <p>Deterioration is often gradual across many parameters between 2:00 and 6:00 AM   when staffing and vigilance are lowest. Watching 15+ variables around the clock exceeds human cognitive load.</p>
+      </div>
+      <div class="card blue">
+        <svg viewBox="0 0 200 90" style="width:100%;margin-bottom:6px">
+          <path d="M10 55 L150 48 L150 34 L192 52 L150 70 L150 60 L10 62 Z" fill="#7fb6d5"/>
+          <line x1="20" y1="80" x2="180" y2="80" stroke="#c8c5bf"/>
+          <text x="100" y="90" font-size="11" text-anchor="middle" class="mono" fill="#5b6b6d">4 to 6 hours</text>
+        </svg>
+        <h4><span class="dot"></span>The ultimate goal</h4>
+        <p>A 4–6 hour head start can mean the difference between reversible deterioration and catastrophic, refractory collapse.</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:2.4vh"><strong>Example:</strong> slowly rising FiO₂ + falling MAP + rising lactate   no single alarm fires, yet the combined trajectory pattern predicts imminent mortality risk hours before collapse.</div>
+  </div>
+  <div class="footnote"><span>CONTINUOUS ICU INTELLIGENCE</span><span>03 / 10</span></div>
+</section>
+
+<!-- 4 · EXISTING SOLUTIONS -->
+<section class="slide">
+  <div class="kicker">03   Landscape</div>
+  <h2 class="title">Existing solutions &amp; their <em>blind spots</em></h2>
+  <div class="body">
+    <table class="cmp">
+      <tr><th>Approach</th><th>Core limitation</th></tr>
+      <tr><td>APACHE II / SOFA / SAPS</td><td class="bad">Static score, no trajectory</td></tr>
+      <tr><td>Vitals-only ML models</td><td class="bad">Hourly bins; no labs, no vent data</td></tr>
+      <tr><td>DATA-GRU <span style="color:var(--muted);font-weight:400;">(Tan &amp; Ye, 2020)</span></td><td class="bad">No meds; no alert logic, AUC-only</td></tr>
+      <tr><td>Retrospective classifiers</td><td class="bad">Single-point score, not live</td></tr>
+      <tr><td>CLEW · Sidora · PreSense · Aisthesis · Insilicare</td><td class="bad">General deterioration/sepsis, not vent-specific mortality</td></tr>
+    </table>
+    <div class="cols two" style="margin-top:1.6vh;">
+      <div class="callout" style="margin-top:0;"><strong>50 papers reviewed  </strong> none pair irregular-time handling, ventilator variables and stale data handling all together.</div>
+      <div class="callout pink" style="margin-top:0;"><strong>Startups scanned  </strong> closest are CLEW &amp; Sidora; none model stale-variable decay or target ventilated patients specifically.</div>
+    </div>
+  </div>
+  <div class="footnote"><span>CONTINUOUS ICU INTELLIGENCE</span><span>04 / 10</span></div>
+</section>
+
+<!-- 5 · PROPOSED SOLUTION -->
+<section class="slide">
+  <div class="kicker">04   Proposed Solution</div>
+  <h2 class="title">Continuous risk <em>intelligence</em></h2>
+  <div class="body">
+    <div class="cols two">
+      <div>
+        <p class="lede">A dynamic, near-continuous risk intelligence system for mechanically ventilated adult ICU patients.</p>
+        <ul class="clean">
+          <li><strong>Continuous ingestion</strong>   hemodynamics, ventilator parameters, labs, medications, fluid balance.</li>
+          <li><strong>24-hour mortality prediction</strong>   refreshed at regular intervals as new data are charted.</li>
+          <li><strong>Stale-variable mechanism</strong>   per-parameter time-since-measurement discounts outdated values.</li>
+          <li><strong>Trajectory &amp; escalation-velocity features</strong>   rates of change and cumulative trends capture deterioration dynamics.</li>
+          <li><strong>Explainable alerts</strong>   “rising FiO₂, falling MAP, vasopressor initiated.”</li>
+          <li><strong>Prototype dashboard</strong>   current risk trajectory with alert rationale.</li>
+        </ul>
+        <div class="callout">Designed to <strong>complement, not replace</strong>, clinical judgment.</div>
+      </div>
+      <div class="divider-col">
+        <svg viewBox="0 0 520 340" style="width:100%">
+          <text x="10" y="22" font-size="13" font-weight="700">Asynchronous ingestion</text>
+          <text x="10" y="62" font-size="12" fill="#5b6b6d">Vitals</text>
+          <rect x="70" y="48" width="430" height="22" rx="11" fill="#e8f2f6"/>
+          <g fill="#7fb6d5">
+            <circle cx="90" cy="59" r="5"/><circle cx="115" cy="59" r="5"/><circle cx="140" cy="59" r="5"/><circle cx="165" cy="59" r="5"/><circle cx="190" cy="59" r="5"/><circle cx="215" cy="59" r="5"/><circle cx="240" cy="59" r="5"/><circle cx="265" cy="59" r="5"/><circle cx="290" cy="59" r="5"/><circle cx="315" cy="59" r="5"/><circle cx="340" cy="59" r="5"/><circle cx="365" cy="59" r="5"/><circle cx="390" cy="59" r="5"/><circle cx="415" cy="59" r="5"/><circle cx="440" cy="59" r="5"/><circle cx="465" cy="59" r="5"/>
+          </g>
+          <text x="70" y="92" font-size="11" class="mono" fill="#5b6b6d">every 15–60 min</text>
+          <text x="10" y="132" font-size="12" fill="#5b6b6d">Labs</text>
+          <rect x="70" y="118" width="430" height="22" rx="11" fill="#fdeef0"/>
+          <circle cx="90" cy="129" r="6" fill="#d97b88"/><circle cx="285" cy="129" r="6" fill="#d97b88"/><circle cx="480" cy="129" r="6" fill="#d97b88"/>
+          <text x="70" y="162" font-size="11" class="mono" fill="#5b6b6d">every 6–24 h</text>
+          <text x="10" y="212" font-size="13" font-weight="700">Stale-variable time-decay</text>
+          <line x1="70" y1="330" x2="500" y2="330" stroke="#c8c5bf"/>
+          <line x1="70" y1="225" x2="70" y2="330" stroke="#c8c5bf"/>
+          <path d="M80 232 C160 234 220 240 270 258 C330 280 400 315 490 327" stroke="#7fb6d5" stroke-width="2.5" fill="none"/>
+          <circle cx="80" cy="232" r="7" fill="#fff" stroke="#7fb6d5" stroke-width="3"/>
+          <text x="40" y="320" font-size="11" fill="#5b6b6d" transform="rotate(-90 40 320)">Predictive weight</text>
+          <text x="440" y="320" font-size="11" class="mono" fill="#5b6b6d" transform="translate(0,-8)">time →</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <div class="footnote"><span>CONTINUOUS ICU INTELLIGENCE</span><span>05 / 10</span></div>
+</section>
+
+<!-- 6 · HOW IT WORKS -->
+<section class="slide">
+  <div class="kicker">05   Architecture</div>
+  <h2 class="title">How will it <em>work?</em></h2>
+  <div class="body">
+    <div class="pipe">
+      <div class="step"><div class="n">STEP 01</div><div class="t">Data Ingestion</div><div class="s">MIMIC-IV / eICU streams</div></div>
+      <div class="step"><div class="n">STEP 02</div><div class="t">Cohort Extraction</div><div class="s">Age ≥ 18 · first ICU stay · ventilation ≥ 24 h</div></div>
+      <div class="step"><div class="n">STEP 03</div><div class="t">Feature Engineering</div><div class="s">Trends · rolling stats · staleness Δt</div></div>
+      <div class="step"><div class="n">STEP 04</div><div class="t">Model Inference</div><div class="s">GRU / LSTM / Transformer / XGBoost</div></div>
+      <div class="step"><div class="n">STEP 05</div><div class="t">Explainability</div><div class="s">SHAP · attention weights</div></div>
+      <div class="step"><div class="n">STEP 06</div><div class="t">Alert &amp; Dashboard</div><div class="s">Threshold alert with drivers</div></div>
+    </div>
+    <div class="cols two" style="margin-top:2.5vh">
+      <div class="card">
+        <h4><span class="dot"></span>Prediction window</h4>
+        <p>At any time <em>t</em>, the model predicts whether the patient will die in the ICU within the <strong>next 24 hours</strong>   a rolling, always-current risk estimate.</p>
+      </div>
+      <div class="card pink">
+        <h4><span class="dot"></span>Stale-variable design</h4>
+        <p>Every variable carries a Δt (time since last measurement). Older values are decayed or treated as less reliable, so a stale lab can’t silently anchor the risk estimate.</p>
+      </div>
+    </div>
+  </div>
+  <div class="footnote"><span>CONTINUOUS ICU INTELLIGENCE</span><span>06 / 10</span></div>
+</section>
+
+<!-- 7 · OBJECTIVES -->
+<section class="slide">
+  <div class="kicker">06   Objectives</div>
+  <h2 class="title">Four <em>objectives</em></h2>
+  <div class="body">
+    <ol class="num">
+      <li><strong>Dynamic mortality model.</strong> Design and implement a time-series ML model predicting 24-hour ICU mortality for mechanically ventilated patients.</li>
+      <li><strong>Stale-variable mechanism.</strong> Track time since last measurement per parameter and reduce the influence of outdated values.</li>
+      <li><strong>Interpretable alerts.</strong> Integrate SHAP and attention-weight visualization to surface the primary drivers of risk escalation.</li>
+      <li><strong>Working prototype.</strong> Demonstrate real-time risk monitoring and early-warning generation on public ICU datasets.</li>
+    </ol>
+    <div class="callout">All objectives focus on time-series dynamics and explainability   deliberately without pre-ICU comorbidity features.</div>
+  </div>
+  <div class="footnote"><span>CONTINUOUS ICU INTELLIGENCE</span><span>07 / 10</span></div>
+</section>
+
+<!-- 8 · TECH & METHODOLOGY -->
+<section class="slide">
+  <div class="kicker">07   Technology &amp; Methodology</div>
+  <h2 class="title">Stack &amp; <em>method</em></h2>
+  <div class="body">
+    <div class="cols two">
+      <div>
+        <h4 style="font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Technology stack</h4>
+        <div style="margin-bottom:10px">
+          <span class="pill">Python 3.10+</span><span class="pill">PyTorch</span><span class="pill">XGBoost</span><span class="pill">scikit-learn</span>
+        </div>
+        <div style="margin-bottom:10px">
+          <span class="pill pink">SHAP</span><span class="pill pink">Attention weights</span><span class="pill pink">Integrated Gradients</span>
+        </div>
+        <div>
+          <span class="pill gray">pandas · pyarrow (Parquet)</span><span class="pill gray">Git + GitHub</span><span class="pill gray">Weights &amp; Biases</span>
+        </div>
+      </div>
+      <div class="divider-col">
+        <h4 style="font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Methodology</h4>
+        <ol class="num" style="counter-reset:n">
+          <li>Literature study &amp; problem identification</li>
+          <li>Cohort extraction from MIMIC-IV</li>
+          <li>Feature engineering: trends, rolling stats, Δt</li>
+          <li>Baselines (LR / XGBoost) + time-aware GRU / LSTM / Transformer</li>
+          <li>70/30 split · AUROC, AUPRC, F1, Brier, calibration</li>
+          <li>Explainability &amp; alert design → prototype dashboard</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="footnote"><span>CONTINUOUS ICU INTELLIGENCE</span><span>08 / 10</span></div>
+</section>
+
+<!-- 9 · OUTCOMES -->
+<section class="slide">
+  <div class="kicker">08   Outcomes &amp; Evaluation</div>
+  <h2 class="title">What we will <em>deliver</em></h2>
+  <div class="body">
+    <div class="cols two">
+      <div class="card" style="align-self:start">
+        <h4><span class="dot"></span>Expected deliverables</h4>
+        <ul class="clean" style="margin-top:10px">
+          <li>Working prototype predicting 24-hour ICU mortality from time-series data</li>
+          <li>Stale-variable mechanism for irregular sampling and outdated measurements</li>
+          <li>Explainable risk alerts naming the drivers of escalation</li>
+          <li>Evaluation report vs. baselines with ablation results</li>
+        </ul>
+      </div>
+      <div class="card pink" style="align-self:start">
+        <h4><span class="dot"></span>Evaluation criteria</h4>
+        <ul class="clean" style="margin-top:10px">
+          <li><strong>Predictive:</strong> AUROC, AUPRC, F1, Brier score, calibration slope</li>
+          <li><strong>Ablation:</strong> with vs. without stale-variable features</li>
+          <li><strong>Explainability:</strong> do explanations match clinical intuition (rising lactate, falling MAP, rising FiO₂)?</li>
+          <li><strong>Prototype:</strong> reproducible ingestion → risk → alert loop</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footnote"><span>CONTINUOUS ICU INTELLIGENCE</span><span>09 / 10</span></div>
+</section>
+
+<!-- 10 · FEASIBILITY & TIMELINE -->
+<section class="slide">
+  <div class="kicker">09   Feasibility &amp; Timeline</div>
+  <h2 class="title">Feasible in <em>16 weeks</em></h2>
+  <span class="pill" style="background:#eaf4f4;color:var(--teal-deep);">✓ Literature Study --> Done </span>
+  <span class="pill" style="background:#eaf4f4;color:var(--teal-deep);">✓ Data Access From Physionet recieved </span>
+  <div class="body">
+    <div class="cols two">
+      <div>
+        <ul class="clean">
+          <li><strong>Technical</strong>   time-series modeling and SHAP are well-supported in Python / PyTorch.</li>
+          <li><strong>Data</strong>   MIMIC-IV via PhysioNet credentialed approval; eICU-CRD optional. (</li>
+          <li><strong>Team</strong>   experience in ML, full-stack development and APIs.</li>
+          <li><strong>Risks</strong>   irregular-series complexity, data-access delays. <em>Mitigation:</em> start with simple baselines; PhysioNet Challenge 2012 as fallback.</li>
+        </ul>
+      </div>
+      <div class="divider-col">
+        <table class="gantt">
+          <tr><td class="lbl">Literature study</td><td class="track"><div class="fill" style="left:0%;width:12.5%"></div></td><td class="wk">W 1–2</td></tr>
+          <tr><td class="lbl">Data &amp; cohort</td><td class="track"><div class="fill b" style="left:12.5%;width:12.5%"></div></td><td class="wk">W 3–4</td></tr>
+          <tr><td class="lbl">Feature engineering</td><td class="track"><div class="fill p" style="left:25%;width:12.5%"></div></td><td class="wk">W 5–6</td></tr>
+          <tr><td class="lbl">Model development</td><td class="track"><div class="fill" style="left:37.5%;width:25%"></div></td><td class="wk">W 7–10</td></tr>
+          <tr><td class="lbl">Testing &amp; refinement</td><td class="track"><div class="fill b" style="left:62.5%;width:12.5%"></div></td><td class="wk">W 11–12</td></tr>
+          <tr><td class="lbl">Evaluation &amp; ablation</td><td class="track"><div class="fill p" style="left:75%;width:12.5%"></div></td><td class="wk">W 13–14</td></tr>
+          <tr><td class="lbl">Documentation</td><td class="track"><div class="fill" style="left:87.5%;width:12.5%"></div></td><td class="wk">W 15–16</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="footnote"><span>CONTINUOUS ICU INTELLIGENCE</span><span>10 / 10</span></div>
+</section>
+
+</div>
+
+<div class="hint"><kbd>←</kbd> <kbd>→</kbd> navigate &nbsp;·&nbsp; <kbd>Home</kbd>/<kbd>End</kbd> jump</div>
+<div class="counter"><span id="cur">01</span><div class="bar"><i id="curbar"></i></div><span>10</span></div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  function show(n){
+    slides[i].classList.remove('active','prev');
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>{s.classList.toggle('prev',k<i)});
+    slides[i].classList.add('active');
+    const p=((i+1)/slides.length)*100;
+    document.getElementById('prog').style.width=p+'%';
+    document.getElementById('cur').textContent=String(i+1).padStart(2,'0');
+    document.getElementById('curbar').style.width=p+'%';
+  }
+  document.addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();show(i+1)}
+    if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();show(i-1)}
+    if(e.key==='Home')show(0);
+    if(e.key==='End')show(slides.length-1);
+  });
+  let sx=null;
+  document.addEventListener('touchstart',e=>sx=e.touches[0].clientX);
+  document.addEventListener('touchend',e=>{
+    if(sx===null)return;
+    const dx=e.changedTouches[0].clientX-sx;
+    if(Math.abs(dx)>50)show(i+(dx<0?1:-1));
+    sx=null;
+  });
+  show(0);
+</script>
+</body>
+</html>
